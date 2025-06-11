@@ -68,6 +68,7 @@ def add_object(module_path, class_name, params):
         logger.error("Impossibile caricare %s.%s: %s", module_path, class_name, err)
         return None
 
+main
     obj = cls(**params)
     this_application.add_object(obj)
     logger.info("Oggetto aggiunto: %s (%s)", params.get("objectName"), class_name)
