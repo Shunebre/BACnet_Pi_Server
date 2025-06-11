@@ -15,7 +15,7 @@ from bacpypes.object import (
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.task import RecurringTask
 from bacpypes.primitivedata import Unsigned
-from bacpypes.basetypes import StatusFlags, ServicesSupported
+from bacpypes.basetypes import StatusFlags
 from bacpypes.primitivedata import ObjectType
 
 # Versione del software letta dal file VERSION
@@ -197,7 +197,6 @@ def main():
         firmwareRevision=VERSION,
         systemStatus="operational",
         databaseRevision=Unsigned(0),
-        protocolServicesSupported=ServicesSupported(),
         protocolObjectTypesSupported=[obj for obj in ObjectType.enumerations],
     )
 
