@@ -68,10 +68,7 @@ def add_object(module_path, class_name, params):
         logger.error("Impossibile caricare %s.%s: %s", module_path, class_name, err)
         return None
 
-    # adatta objectIdentifier passato tramite JSON (lista -> tupla)
-    if "objectIdentifier" in params and isinstance(params["objectIdentifier"], list):
-        params["objectIdentifier"] = tuple(params["objectIdentifier"])
-
+main
     obj = cls(**params)
     this_application.add_object(obj)
     logger.info("Oggetto aggiunto: %s (%s)", params.get("objectName"), class_name)
