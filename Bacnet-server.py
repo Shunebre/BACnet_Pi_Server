@@ -1,6 +1,7 @@
 import logging
 import json
 import importlib
+import argparse
 import RPi.GPIO as GPIO
 
 
@@ -23,48 +24,23 @@ with open("VERSION") as vf:
 
 
 # Configura logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
-# Configura i pin GPIO
+this_application = None
 INPUT_PINS = [17]
 OUTPUT_PINS = [27]
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-for pin in INPUT_PINS:
-    GPIO.setup(pin, GPIO.IN)
-for pin in OUTPUT_PINS:
-    GPIO.setup(pin, GPIO.OUT)
+binary_inputs = {}
+binary_outputs = {}
+msv = None
 
 # Parametri del dispositivo BACnet
 DEVICE_ID = 110
 DEVICE_NAME = "GardenPi"
 VENDOR_ID = 15
-
-# Crea un oggetto Device
-device = LocalDeviceObject(
-    objectName=DEVICE_NAME,
-    objectIdentifier=('device', DEVICE_ID),
-    maxApduLengthAccepted=1024,
-    segmentationSupported="segmentedBoth",
-    vendorIdentifier=VENDOR_ID,
-)
-
-# Proprietà custom
-device.modelName = "Raspberry Pi 4 B"
-device.vendorName = "Nenad Stankovic"
-device.applicationSoftwareVersion = VERSION
-device.firmwareRevision = VERSION
-device.systemStatus = 'operational'
-device.databaseRevision = Unsigned(0)
-
-# Abilita tutti i servizi e tipi di oggetto
-device.protocolServicesSupported = ServicesSupported()
-device.protocolObjectTypesSupported = [obj for obj in ObjectType.enumerations]
-
-# Crea l'applicazione BACnet
-this_application = BIPSimpleApplication(device, '192.168.1.10/24:47808')
 
 # ------------------------------------------------------------------------------
 # Helper per aggiungere dinamicamente oggetti BACnet
@@ -95,7 +71,7 @@ def add_object(module_path, class_name, params):
 
 
 def load_objects_from_config(config_path="objects.json"):
-    """Carica oggetti aggiuntivi da un file JSON."""
+    """Carica oggetti aggiuntivi da un file JSON con controlli di base."""
     try:
         with open(config_path) as cfg:
             objects = json.load(cfg)
@@ -106,6 +82,7 @@ def load_objects_from_config(config_path="objects.json"):
         logger.error("Errore di parsing %s: %s", config_path, err)
         return
 
+    seen_ids = set()
     for entry in objects:
         module_path = entry.get("module")
         class_name = entry.get("class")
@@ -113,11 +90,21 @@ def load_objects_from_config(config_path="objects.json"):
         if not module_path or not class_name:
             logger.warning("Definizione oggetto non valida: %s", entry)
             continue
+
+        oid = params.get("objectIdentifier")
+        if not oid:
+            logger.warning("objectIdentifier mancante in %s", entry)
+            continue
+        oid_tuple = tuple(oid) if isinstance(oid, list) else oid
+        if oid_tuple in seen_ids:
+            logger.warning("Oggetto con objectIdentifier %s duplicato", oid_tuple)
+            continue
+        seen_ids.add(oid_tuple)
+        params["objectIdentifier"] = oid_tuple
+
         add_object(module_path, class_name, params)
 
-# Binary Input/Output Objects for GPIO
-binary_inputs = {}
-binary_outputs = {}
+# Binary Input/Output Objects per GPIO
 
 class CustomBinaryInput(BinaryInputObject):
     def __init__(self, **kwargs):
@@ -133,24 +120,6 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.outOfService = False
         self.eventState = 'normal'
 
-for idx, pin in enumerate(INPUT_PINS, start=1):
-    bi = CustomBinaryInput(
-        objectIdentifier=('binaryInput', idx),
-        objectName=f'GPIO_{pin}_Input',
-        presentValue=0,
-    )
-    this_application.add_object(bi)
-    binary_inputs[pin] = bi
-
-for idx, pin in enumerate(OUTPUT_PINS, start=1):
-    bo = CustomBinaryOutput(
-        objectIdentifier=('binaryOutput', idx),
-        objectName=f'GPIO_{pin}_Output',
-        presentValue='inactive',
-    )
-    this_application.add_object(bo)
-    binary_outputs[pin] = bo
-
 # Multi-State Value
 class CustomMultiStateValue(MultiStateValueObject):
     def __init__(self, **kwargs):
@@ -161,19 +130,6 @@ class CustomMultiStateValue(MultiStateValueObject):
         # abilita la scrittura del presentValue
         if 'presentValue' in self.properties:
             self.properties['presentValue'].writable = True
-
-msv = CustomMultiStateValue(
-    objectIdentifier=('multiStateValue', 1),
-    objectName='Operation_Mode',
-    presentValue=1,
-    numberOfStates=2,
-    stateText=["Input", "Output"],
-)
-this_application.add_object(msv)
-
-
-# Carica eventuali oggetti aggiuntivi definiti in objects.json
-load_objects_from_config()
 
 # Task GPIO
 class GPIOUpdateTask(RecurringTask):
@@ -203,13 +159,93 @@ class GPIOUpdateTask(RecurringTask):
 
         self.install_task()
 
-GPIOUpdateTask(5)  # ogni 5 secondi
 
-try:
-    logger.info("Server BACnet avviato.")
-    run()
-except KeyboardInterrupt:
-    logger.info("Server BACnet terminato.")
-finally:
-    GPIO.cleanup()
-    stop()
+def main():
+    parser = argparse.ArgumentParser(description="BACnet Pi Server")
+    parser.add_argument(
+        "-a",
+        "--address",
+        default="192.168.1.10/24:47808",
+        help="Indirizzo BIP (ip/prefix:porta)",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        default="objects.json",
+        help="File JSON con oggetti aggiuntivi",
+    )
+    args = parser.parse_args()
+
+    global this_application, msv
+
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    for pin in INPUT_PINS:
+        GPIO.setup(pin, GPIO.IN)
+    for pin in OUTPUT_PINS:
+        GPIO.setup(pin, GPIO.OUT)
+
+    device = LocalDeviceObject(
+        objectName=DEVICE_NAME,
+        objectIdentifier=("device", DEVICE_ID),
+        maxApduLengthAccepted=1024,
+        segmentationSupported="segmentedBoth",
+        vendorIdentifier=VENDOR_ID,
+    )
+
+    device.modelName = "Raspberry Pi 4 B"
+    device.vendorName = "Nenad Stankovic"
+    device.applicationSoftwareVersion = VERSION
+    device.firmwareRevision = VERSION
+    device.systemStatus = "operational"
+    device.databaseRevision = Unsigned(0)
+
+    device.protocolServicesSupported = ServicesSupported()
+    device.protocolObjectTypesSupported = [obj for obj in ObjectType.enumerations]
+
+    this_application = BIPSimpleApplication(device, args.address)
+
+    for idx, pin in enumerate(INPUT_PINS, start=1):
+        bi = CustomBinaryInput(
+            objectIdentifier=("binaryInput", idx),
+            objectName=f"GPIO_{pin}_Input",
+            presentValue=0,
+        )
+        this_application.add_object(bi)
+        binary_inputs[pin] = bi
+
+    for idx, pin in enumerate(OUTPUT_PINS, start=1):
+        bo = CustomBinaryOutput(
+            objectIdentifier=("binaryOutput", idx),
+            objectName=f"GPIO_{pin}_Output",
+            presentValue="inactive",
+        )
+        this_application.add_object(bo)
+        binary_outputs[pin] = bo
+
+    msv = CustomMultiStateValue(
+        objectIdentifier=("multiStateValue", 1),
+        objectName="Operation_Mode",
+        presentValue=1,
+        numberOfStates=2,
+        stateText=["Input", "Output"],
+    )
+    this_application.add_object(msv)
+
+    load_objects_from_config(args.config)
+
+    GPIOUpdateTask(5)
+
+    try:
+        logger.info("Server BACnet avviato.")
+        run()
+    except KeyboardInterrupt:
+        logger.info("Server BACnet terminato.")
+    finally:
+        GPIO.cleanup()
+        stop()
+
+
+if __name__ == "__main__":
+    main()
+
