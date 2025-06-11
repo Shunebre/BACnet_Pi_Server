@@ -26,7 +26,9 @@ Il file deve contenere una lista di oggetti con i seguenti campi:
 
 Il sistema importa dinamicamente il modulo e la classe indicati e aggiunge l'oggetto
 all'applicazione. In questo modo è possibile utilizzare qualsiasi tipo di oggetto fornito
- dalle librerie installate, inclusi quelli elencati nella richiesta (Alarm, Schedule, ecc.).
+dalle librerie installate, inclusi quelli elencati nella richiesta (Alarm, Schedule, ecc.).
+Se nel file JSON `objectIdentifier` è definito come lista, lo script lo converte
+automaticamente in una tupla prima di creare l'oggetto.
 
 ## Esecuzione
 
