@@ -1,4 +1,6 @@
 import logging
+import json
+import importlib
 import RPi.GPIO as GPIO
 import Adafruit_DHT
 import Adafruit_DHT.common as dht_common  # Fix per "Unknown platform"
@@ -53,6 +55,50 @@ device.databaseRevision = Unsigned(0)
 # Crea l'applicazione BACnet
 this_application = BIPSimpleApplication(device, '192.168.1.10/24:47808')
 
+# ------------------------------------------------------------------------------
+# Helper per aggiungere dinamicamente oggetti BACnet
+# ------------------------------------------------------------------------------
+
+def add_object(module_path, class_name, params):
+    """Importa dinamicamente e aggiunge un oggetto BACnet all'applicazione."""
+    try:
+        module = importlib.import_module(module_path)
+        cls = getattr(module, class_name)
+    except (ImportError, AttributeError) as err:
+        logger.error("Impossibile caricare %s.%s: %s", module_path, class_name, err)
+        return None
+
+    # adatta objectIdentifier passato tramite JSON (lista -> tupla)
+    if "objectIdentifier" in params and isinstance(params["objectIdentifier"], list):
+        params["objectIdentifier"] = tuple(params["objectIdentifier"])
+
+    obj = cls(**params)
+    this_application.add_object(obj)
+    logger.info("Oggetto aggiunto: %s (%s)", params.get("objectName"), class_name)
+    return obj
+
+
+def load_objects_from_config(config_path="objects.json"):
+    """Carica oggetti aggiuntivi da un file JSON."""
+    try:
+        with open(config_path) as cfg:
+            objects = json.load(cfg)
+    except FileNotFoundError:
+        logger.warning("File di configurazione %s non trovato", config_path)
+        return
+    except json.JSONDecodeError as err:
+        logger.error("Errore di parsing %s: %s", config_path, err)
+        return
+
+    for entry in objects:
+        module_path = entry.get("module")
+        class_name = entry.get("class")
+        params = entry.get("params", {})
+        if not module_path or not class_name:
+            logger.warning("Definizione oggetto non valida: %s", entry)
+            continue
+        add_object(module_path, class_name, params)
+
 # Binary Input
 bi = BinaryInputObject(
     objectIdentifier=('binaryInput', 1),
@@ -90,6 +136,9 @@ av = CustomAnalogValue(
     presentValue=0.0
 )
 this_application.add_object(av)
+
+# Carica eventuali oggetti aggiuntivi definiti in objects.json
+load_objects_from_config()
 
 # Task GPIO e DHT11
 class GPIOUpdateTask(RecurringTask):
