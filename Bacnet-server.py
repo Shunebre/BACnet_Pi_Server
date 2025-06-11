@@ -70,6 +70,9 @@ def add_object(module_path, class_name, params):
         logger.error("Impossibile caricare %s.%s: %s", module_path, class_name, err)
         return None
 
+    if "objectIdentifier" in params and isinstance(params["objectIdentifier"], list):
+        params["objectIdentifier"] = tuple(params["objectIdentifier"])
+
     obj = cls(**params)
     this_application.add_object(obj)
     logger.info("Oggetto aggiunto: %s (%s)", params.get("objectName"), class_name)
@@ -101,6 +104,13 @@ def load_objects_from_config(config_path="objects.json"):
 binary_inputs = {}
 binary_outputs = {}
 
+class CustomBinaryInput(BinaryInputObject):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.statusFlags = StatusFlags([False, False, False, False])
+        self.outOfService = False
+        self.eventState = 'normal'
+
 class CustomBinaryOutput(BinaryOutputObject):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -109,7 +119,7 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.eventState = 'normal'
 
 for idx, pin in enumerate(INPUT_PINS, start=1):
-    bi = BinaryInputObject(
+    bi = CustomBinaryInput(
         objectIdentifier=('binaryInput', idx),
         objectName=f'GPIO_{pin}_Input',
         presentValue=0,
