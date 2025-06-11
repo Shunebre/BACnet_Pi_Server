@@ -6,6 +6,11 @@ Il punto `Operation_Mode` è un oggetto *Multi-State Value* con due stati:
 "Input" e "Output". Scrivendo questo valore si può commutare la modalità dei
 pin di uscita.
 
+Il server ora espone tutte le funzionalità BACnet base impostando le
+proprietà `protocolServicesSupported` e `protocolObjectTypesSupported` del
+dispositivo. Inoltre `Operation_Mode` accetta scritture tramite il servizio
+`WriteProperty`.
+
 ## Aggiunta di oggetti dinamici
 
 Oltre agli oggetti predefiniti (Binary Input, Binary Output e Multi-State Value) è possibile
