@@ -14,7 +14,8 @@ from bacpypes.object import (
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.task import RecurringTask
 from bacpypes.primitivedata import Unsigned
-from bacpypes.basetypes import StatusFlags
+from bacpypes.basetypes import StatusFlags, ServicesSupported
+from bacpypes.primitivedata import ObjectType
 
 # Versione del software letta dal file VERSION
 with open("VERSION") as vf:
@@ -57,6 +58,10 @@ device.applicationSoftwareVersion = VERSION
 device.firmwareRevision = VERSION
 device.systemStatus = 'operational'
 device.databaseRevision = Unsigned(0)
+
+# Abilita tutti i servizi e tipi di oggetto
+device.protocolServicesSupported = ServicesSupported()
+device.protocolObjectTypesSupported = [obj for obj in ObjectType.enumerations]
 
 # Crea l'applicazione BACnet
 this_application = BIPSimpleApplication(device, '192.168.1.10/24:47808')
@@ -153,6 +158,9 @@ class CustomMultiStateValue(MultiStateValueObject):
         self.statusFlags = StatusFlags([False, False, False, False])
         self.outOfService = False
         self.eventState = 'normal'
+        # abilita la scrittura del presentValue
+        if 'presentValue' in self.properties:
+            self.properties['presentValue'].writable = True
 
 msv = CustomMultiStateValue(
     objectIdentifier=('multiStateValue', 1),
