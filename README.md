@@ -4,7 +4,7 @@ Questo server BACnet per Raspberry Pi consente di esporre punti come input e out
 
 ## Aggiunta di oggetti dinamici
 
-Oltre agli oggetti predefiniti (Binary Input, Binary Output e Analog Value) è possibile
+Oltre agli oggetti predefiniti (Binary Input, Binary Output e Multi-State Value) è possibile
 aggiungere ulteriori oggetti definendoli in un file `objects.json` posizionato nella stessa
 cartella dello script.
 
@@ -30,7 +30,7 @@ all'applicazione. In questo modo è possibile utilizzare qualsiasi tipo di ogget
 
 ## Esecuzione
 
-Assicurarsi che le dipendenze (RPi.GPIO, Adafruit_DHT, bacpypes) siano installate.
+Assicurarsi che le dipendenze (RPi.GPIO e bacpypes) siano installate.
 Avviare lo script con:
 
 ```bash
