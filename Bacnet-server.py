@@ -16,6 +16,10 @@ from bacpypes.task import RecurringTask
 from bacpypes.primitivedata import Unsigned
 from bacpypes.basetypes import StatusFlags
 
+# Versione del software letta dal file VERSION
+with open("VERSION") as vf:
+    VERSION = vf.read().strip()
+
 
 # Configura logging
 logging.basicConfig(level=logging.INFO)
@@ -49,8 +53,8 @@ device = LocalDeviceObject(
 # Proprietà custom
 device.modelName = "Raspberry Pi 4 B"
 device.vendorName = "Nenad Stankovic"
-device.applicationSoftwareVersion = "1.0.0"
-device.firmwareRevision = "1.0.0"
+device.applicationSoftwareVersion = VERSION
+device.firmwareRevision = VERSION
 device.systemStatus = 'operational'
 device.databaseRevision = Unsigned(0)
 
@@ -74,6 +78,10 @@ def add_object(module_path, class_name, params):
     oid = params.get("objectIdentifier")
     if isinstance(oid, list):
         params["objectIdentifier"] = tuple(oid)
+
+    sf = params.get("statusFlags")
+    if isinstance(sf, list) and len(sf) == 4:
+        params["statusFlags"] = StatusFlags(sf)
 
     obj = cls(**params)
     this_application.add_object(obj)
@@ -106,6 +114,13 @@ def load_objects_from_config(config_path="objects.json"):
 binary_inputs = {}
 binary_outputs = {}
 
+class CustomBinaryInput(BinaryInputObject):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.statusFlags = StatusFlags([False, False, False, False])
+        self.outOfService = False
+        self.eventState = 'normal'
+
 class CustomBinaryOutput(BinaryOutputObject):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -114,7 +129,7 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.eventState = 'normal'
 
 for idx, pin in enumerate(INPUT_PINS, start=1):
-    bi = BinaryInputObject(
+    bi = CustomBinaryInput(
         objectIdentifier=('binaryInput', idx),
         objectName=f'GPIO_{pin}_Input',
         presentValue=0,
@@ -143,8 +158,8 @@ msv = CustomMultiStateValue(
     objectIdentifier=('multiStateValue', 1),
     objectName='Operation_Mode',
     presentValue=1,
-    numberOfStates=3,
-    stateText=["Off", "Manual", "Automatic"],
+    numberOfStates=2,
+    stateText=["Input", "Output"],
 )
 this_application.add_object(msv)
 
@@ -156,17 +171,27 @@ load_objects_from_config()
 class GPIOUpdateTask(RecurringTask):
     def __init__(self, interval):
         RecurringTask.__init__(self, interval * 1000)
+        self.last_mode = msv.presentValue
         self.install_task()
 
     def process_task(self):
+        # Configura i pin di output in base all'Operation_Mode
+        mode = msv.presentValue
+        if mode != self.last_mode:
+            direction = GPIO.IN if mode == 1 else GPIO.OUT
+            for pin in OUTPUT_PINS:
+                GPIO.setup(pin, direction)
+            self.last_mode = mode
+
         # Aggiorna tutti i Binary Input
         for pin, obj in binary_inputs.items():
             obj.presentValue = 1 if GPIO.input(pin) else 0
 
         # Aggiorna tutti i Binary Output
-        for pin, obj in binary_outputs.items():
-            value = 1 if obj.presentValue == 'active' else 0
-            GPIO.output(pin, value)
+        if msv.presentValue == 2:  # solo in modalità Output
+            for pin, obj in binary_outputs.items():
+                value = 1 if obj.presentValue == 'active' else 0
+                GPIO.output(pin, value)
 
         self.install_task()
 
