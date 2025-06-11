@@ -1,0 +1,12 @@
+[
+  {
+    "module": "bacpypes.object",
+    "class": "BinaryInputObject",
+    "params": {
+      "objectIdentifier": ["binaryInput", 2],
+      "objectName": "ExampleInput",
+      "presentValue": 0
+    }
+  }
+]
+
