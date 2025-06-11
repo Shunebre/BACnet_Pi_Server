@@ -191,17 +191,15 @@ def main():
         maxApduLengthAccepted=1024,
         segmentationSupported="segmentedBoth",
         vendorIdentifier=VENDOR_ID,
+        modelName="Raspberry Pi 4 B",
+        vendorName="Nenad Stankovic",
+        applicationSoftwareVersion=VERSION,
+        firmwareRevision=VERSION,
+        systemStatus="operational",
+        databaseRevision=Unsigned(0),
+        protocolServicesSupported=ServicesSupported(),
+        protocolObjectTypesSupported=[obj for obj in ObjectType.enumerations],
     )
-
-    device.modelName = "Raspberry Pi 4 B"
-    device.vendorName = "Nenad Stankovic"
-    device.applicationSoftwareVersion = VERSION
-    device.firmwareRevision = VERSION
-    device.systemStatus = "operational"
-    device.databaseRevision = Unsigned(0)
-
-    device.protocolServicesSupported = ServicesSupported()
-    device.protocolObjectTypesSupported = [obj for obj in ObjectType.enumerations]
 
     this_application = BIPSimpleApplication(device, args.address)
 
