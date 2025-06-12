@@ -22,6 +22,10 @@ from bacpypes.primitivedata import ObjectType
 with open("VERSION") as vf:
     VERSION = vf.read().strip()
 
+MODE_INPUT = 1
+MODE_OUTPUT = 2
+DEFAULT_MODE = MODE_INPUT
+
 
 # Configura logging
 logging.basicConfig(
@@ -142,7 +146,7 @@ class GPIOUpdateTask(RecurringTask):
         # Configura i pin di output in base all'Operation_Mode
         mode = msv.presentValue
         if mode != self.last_mode:
-            direction = GPIO.IN if mode == 1 else GPIO.OUT
+            direction = GPIO.IN if mode == MODE_INPUT else GPIO.OUT
             for pin in OUTPUT_PINS:
                 GPIO.setup(pin, direction)
             self.last_mode = mode
@@ -152,7 +156,7 @@ class GPIOUpdateTask(RecurringTask):
             obj.presentValue = 1 if GPIO.input(pin) else 0
 
         # Aggiorna tutti i Binary Output
-        if msv.presentValue == 2:  # solo in modalità Output
+        if msv.presentValue == MODE_OUTPUT:  # solo in modalità Output
             for pin, obj in binary_outputs.items():
                 value = 1 if obj.presentValue == 'active' else 0
                 GPIO.output(pin, value)
@@ -174,6 +178,11 @@ def main():
         default="objects.json",
         help="File JSON con oggetti aggiuntivi",
     )
+    parser.add_argument(
+        "-b",
+        "--bbmd",
+        help="Indirizzo del BBMD per la registrazione come Foreign Device",
+    )
     args = parser.parse_args()
 
     global this_application, msv
@@ -182,8 +191,9 @@ def main():
     GPIO.setmode(GPIO.BCM)
     for pin in INPUT_PINS:
         GPIO.setup(pin, GPIO.IN)
+    initial_dir = GPIO.IN if DEFAULT_MODE == MODE_INPUT else GPIO.OUT
     for pin in OUTPUT_PINS:
-        GPIO.setup(pin, GPIO.OUT)
+        GPIO.setup(pin, initial_dir)
 
     device = LocalDeviceObject(
         objectName=DEVICE_NAME,
@@ -201,6 +211,11 @@ def main():
     )
 
     this_application = BIPSimpleApplication(device, args.address)
+    if args.bbmd:
+        try:
+            this_application.register_foreign_device(args.bbmd)
+        except Exception as err:
+            logger.error("Registrazione BBMD fallita: %s", err)
 
     for idx, pin in enumerate(INPUT_PINS, start=1):
         bi = CustomBinaryInput(
@@ -223,7 +238,7 @@ def main():
     msv = CustomMultiStateValue(
         objectIdentifier=("multiStateValue", 1),
         objectName="Operation_Mode",
-        presentValue=1,
+        presentValue=DEFAULT_MODE,
         numberOfStates=2,
         stateText=["Input", "Output"],
     )
