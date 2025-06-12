@@ -4,7 +4,8 @@ Questo server BACnet per Raspberry Pi consente di esporre punti come input e out
 
 Il punto `Operation_Mode` è un oggetto *Multi-State Value* con due stati:
 "Input" e "Output". Scrivendo questo valore si può commutare la modalità dei
-pin di uscita.
+pin di uscita. All'avvio i pin di uscita vengono configurati in base al valore
+predefinito di `Operation_Mode`.
 
 Il server espone le funzionalità BACnet di base configurando la
 proprietà `protocolObjectTypesSupported` del dispositivo. Inoltre
@@ -51,6 +52,24 @@ Avviare lo script con:
 
 ```bash
 python Bacnet-server.py
+```
+
+Se il server deve comunicare tramite una VPN, è possibile registrarsi presso un
+BBMD specificando l'indirizzo con l'opzione `--bbmd`, ad esempio:
+
+```bash
+python Bacnet-server.py --bbmd 10.194.195.1
+```
+
+È anche possibile impostare la variabile d'ambiente `BACNET_BBMD` con
+l'indirizzo del BBMD, utile quando il server viene avviato tramite systemd.
+
+Esempio di unità systemd:
+
+```ini
+[Service]
+Environment="BACNET_BBMD=10.194.195.1"
+ExecStart=/usr/bin/python3 /percorso/Bacnet-server.py
 ```
 
 ### Gestione delle versioni
