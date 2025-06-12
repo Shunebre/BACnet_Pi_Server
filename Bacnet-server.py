@@ -2,6 +2,7 @@ import logging
 import json
 import importlib
 import argparse
+from ipaddress import ip_interface
 import RPi.GPIO as GPIO
 
 
@@ -211,6 +212,14 @@ def main():
     )
 
     this_application = BIPSimpleApplication(device, args.address)
+
+    # Estrae informazioni dall'indirizzo BIP
+    ip_port = args.address.split(":")
+    iface = ip_interface(ip_port[0])
+    ip_addr = str(iface.ip)
+    broadcast_ip = str(iface.network.broadcast_address)
+    port = int(ip_port[1]) if len(ip_port) > 1 else 0
+
     if args.bbmd:
         try:
             this_application.register_foreign_device(args.bbmd)
@@ -249,7 +258,14 @@ def main():
     GPIOUpdateTask(5)
 
     try:
-        logger.info("Server BACnet avviato.")
+        logger.info(
+            "Server BACnet avviato. IP: %s, ID: %s, Porta: %d, Broadcast IP: %s, BBMD: %s",
+            ip_addr,
+            DEVICE_ID,
+            port,
+            broadcast_ip,
+            args.bbmd if args.bbmd else "Nessuno",
+        )
         run()
     except KeyboardInterrupt:
         logger.info("Server BACnet terminato.")
