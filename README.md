@@ -61,6 +61,13 @@ BBMD specificando l'indirizzo con l'opzione `--bbmd`, ad esempio:
 python Bacnet-server.py --bbmd 10.194.195.1
 ```
 
+È anche possibile specificare un IP di broadcast personalizzato con
+l'opzione `--broadcast-ip`:
+
+```bash
+python Bacnet-server.py --broadcast-ip 255.255.255.255
+```
+
 ### Gestione delle versioni
 
 Il numero di versione è contenuto nel file `VERSION`. Ogni modifica al codice

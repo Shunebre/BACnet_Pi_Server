@@ -18,6 +18,7 @@ from bacpypes.task import RecurringTask
 from bacpypes.primitivedata import Unsigned
 from bacpypes.basetypes import StatusFlags
 from bacpypes.primitivedata import ObjectType
+from bacpypes.pdu import Address
 
 # Versione del software letta dal file VERSION
 with open("VERSION") as vf:
@@ -184,6 +185,11 @@ def main():
         "--bbmd",
         help="Indirizzo del BBMD per la registrazione come Foreign Device",
     )
+    parser.add_argument(
+        "-r",
+        "--broadcast-ip",
+        help="Indirizzo IP di broadcast (es. 255.255.255.255)",
+    )
     args = parser.parse_args()
 
     global this_application, msv
@@ -217,8 +223,18 @@ def main():
     ip_port = args.address.split(":")
     iface = ip_interface(ip_port[0])
     ip_addr = str(iface.ip)
-    broadcast_ip = str(iface.network.broadcast_address)
+    broadcast_ip = args.broadcast_ip if args.broadcast_ip else str(
+        iface.network.broadcast_address
+    )
     port = int(ip_port[1]) if len(ip_port) > 1 else 0
+
+    if args.broadcast_ip:
+        try:
+            this_application.ns._localBroadcast = Address(args.broadcast_ip)
+        except Exception as err:
+            logger.warning(
+                "Impossibile impostare broadcast IP personalizzato: %s", err
+            )
 
     if args.bbmd:
         try:
