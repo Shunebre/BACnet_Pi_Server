@@ -11,7 +11,6 @@ from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import (
     BinaryInputObject,
     BinaryOutputObject,
-    MultiStateValueObject,
 )
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.task import RecurringTask
@@ -24,11 +23,6 @@ from bacpypes.pdu import Address
 with open("VERSION") as vf:
     VERSION = vf.read().strip()
 
-MODE_INPUT = 1
-MODE_OUTPUT = 2
-DEFAULT_MODE = MODE_INPUT
-
-
 # Configura logging
 logging.basicConfig(
     level=logging.INFO,
@@ -37,11 +31,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 this_application = None
-INPUT_PINS = [17]
-OUTPUT_PINS = [27]
+# Tutti i pin pari come input, dispari come output
+ALL_PINS = list(range(2, 28))
+INPUT_PINS = [pin for pin in ALL_PINS if pin % 2 == 0]
+OUTPUT_PINS = [pin for pin in ALL_PINS if pin % 2 == 1]
 binary_inputs = {}
 binary_outputs = {}
-msv = None
 
 # Parametri del dispositivo BACnet
 DEVICE_ID = 110
@@ -126,42 +121,22 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.outOfService = False
         self.eventState = 'normal'
 
-# Multi-State Value
-class CustomMultiStateValue(MultiStateValueObject):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.statusFlags = StatusFlags([False, False, False, False])
-        self.outOfService = False
-        self.eventState = 'normal'
-        # abilita la scrittura del presentValue
-        if 'presentValue' in self.properties:
-            self.properties['presentValue'].writable = True
 
 # Task GPIO
 class GPIOUpdateTask(RecurringTask):
     def __init__(self, interval):
         RecurringTask.__init__(self, interval * 1000)
-        self.last_mode = msv.presentValue
         self.install_task()
 
     def process_task(self):
-        # Configura i pin di output in base all'Operation_Mode
-        mode = msv.presentValue
-        if mode != self.last_mode:
-            direction = GPIO.IN if mode == MODE_INPUT else GPIO.OUT
-            for pin in OUTPUT_PINS:
-                GPIO.setup(pin, direction)
-            self.last_mode = mode
-
         # Aggiorna tutti i Binary Input
         for pin, obj in binary_inputs.items():
             obj.presentValue = 1 if GPIO.input(pin) else 0
 
         # Aggiorna tutti i Binary Output
-        if msv.presentValue == MODE_OUTPUT:  # solo in modalità Output
-            for pin, obj in binary_outputs.items():
-                value = 1 if obj.presentValue == 'active' else 0
-                GPIO.output(pin, value)
+        for pin, obj in binary_outputs.items():
+            value = 1 if obj.presentValue == 'active' else 0
+            GPIO.output(pin, value)
 
         self.install_task()
 
@@ -192,15 +167,14 @@ def main():
     )
     args = parser.parse_args()
 
-    global this_application, msv
+    global this_application
 
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     for pin in INPUT_PINS:
         GPIO.setup(pin, GPIO.IN)
-    initial_dir = GPIO.IN if DEFAULT_MODE == MODE_INPUT else GPIO.OUT
     for pin in OUTPUT_PINS:
-        GPIO.setup(pin, initial_dir)
+        GPIO.setup(pin, GPIO.OUT)
 
     device = LocalDeviceObject(
         objectName=DEVICE_NAME,
@@ -245,8 +219,9 @@ def main():
     for idx, pin in enumerate(INPUT_PINS, start=1):
         bi = CustomBinaryInput(
             objectIdentifier=("binaryInput", idx),
-            objectName=f"GPIO_{pin}_Input",
+            objectName=f"GPIO{pin}",
             presentValue=0,
+            description=f"GPIO{pin} Pin {pin}",
         )
         this_application.add_object(bi)
         binary_inputs[pin] = bi
@@ -254,20 +229,12 @@ def main():
     for idx, pin in enumerate(OUTPUT_PINS, start=1):
         bo = CustomBinaryOutput(
             objectIdentifier=("binaryOutput", idx),
-            objectName=f"GPIO_{pin}_Output",
+            objectName=f"GPIO{pin}",
             presentValue="inactive",
+            description=f"GPIO{pin} Pin {pin}",
         )
         this_application.add_object(bo)
         binary_outputs[pin] = bo
-
-    msv = CustomMultiStateValue(
-        objectIdentifier=("multiStateValue", 1),
-        objectName="Operation_Mode",
-        presentValue=DEFAULT_MODE,
-        numberOfStates=2,
-        stateText=["Input", "Output"],
-    )
-    this_application.add_object(msv)
 
     load_objects_from_config(args.config)
 
