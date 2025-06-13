@@ -66,7 +66,11 @@ def add_object(module_path, class_name, params):
         params["statusFlags"] = StatusFlags(sf)
 
     obj = cls(**params)
-    this_application.add_object(obj)
+    try:
+        this_application.add_object(obj)
+    except RuntimeError as err:
+        logger.warning("Impossibile aggiungere l'oggetto %s: %s", params.get("objectName"), err)
+        return None
     logger.info("Oggetto aggiunto: %s (%s)", params.get("objectName"), class_name)
     return obj
 
@@ -83,7 +87,12 @@ def load_objects_from_config(config_path="objects.json"):
         logger.error("Errore di parsing %s: %s", config_path, err)
         return
 
-    seen_ids = set()
+    # Identificatori gia' utilizzati nell'applicazione
+    seen_ids = {
+        obj.objectIdentifier
+        for obj in list(binary_inputs.values()) + list(binary_outputs.values())
+    }
+    seen_ids.add(("device", DEVICE_ID))
     for entry in objects:
         module_path = entry.get("module")
         class_name = entry.get("class")
