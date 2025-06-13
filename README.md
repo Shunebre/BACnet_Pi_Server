@@ -2,18 +2,16 @@
 
 Questo server BACnet per Raspberry Pi consente di esporre punti come input e output GPIO.
 
-Il punto `Operation_Mode` è un oggetto *Multi-State Value* con due stati:
-"Input" e "Output". Scrivendo questo valore si può commutare la modalità dei
-pin di uscita. All'avvio i pin di uscita vengono configurati in base al valore
-predefinito di `Operation_Mode`.
-
 Il server espone le funzionalità BACnet di base configurando la
-proprietà `protocolObjectTypesSupported` del dispositivo. Inoltre
-`Operation_Mode` accetta scritture tramite il servizio `WriteProperty`.
+proprietà `protocolObjectTypesSupported` del dispositivo. Tutti i pin BCM
+pari (2–27) vengono configurati come *Binary Input*, mentre i pin dispari
+diventano *Binary Output* controllabili tramite la proprietà
+`presentValue`. Ogni oggetto viene chiamato `GPIOX`, dove `X` è il numero
+del pin, e possiede come descrizione `GPIOX Pin X`.
 
 ## Aggiunta di oggetti dinamici
 
-Oltre agli oggetti predefiniti (Binary Input, Binary Output e Multi-State Value) è possibile
+Oltre agli oggetti predefiniti (Binary Input e Binary Output) è possibile
 aggiungere ulteriori oggetti definendoli in un file `objects.json` posizionato nella stessa
 cartella dello script.
 
