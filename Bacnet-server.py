@@ -37,6 +37,35 @@ INPUT_PINS = [pin for pin in ALL_PINS if pin % 2 == 0]
 OUTPUT_PINS = [pin for pin in ALL_PINS if pin % 2 == 1]
 binary_inputs = {}
 binary_outputs = {}
+# Mappa dei pin BCM al numero del pin fisico sulla board
+PIN_MAP = {
+    2: 3,
+    3: 5,
+    4: 7,
+    5: 29,
+    6: 31,
+    7: 26,
+    8: 24,
+    9: 21,
+    10: 19,
+    11: 23,
+    12: 32,
+    13: 33,
+    14: 8,
+    15: 10,
+    16: 36,
+    17: 11,
+    18: 12,
+    19: 35,
+    20: 38,
+    21: 40,
+    22: 15,
+    23: 16,
+    24: 18,
+    25: 22,
+    26: 37,
+    27: 13,
+}
 
 # Parametri del dispositivo BACnet
 DEVICE_ID = 110
@@ -230,7 +259,7 @@ def main():
             objectIdentifier=("binaryInput", idx),
             objectName=f"GPIO{pin}",
             presentValue=0,
-            description=f"GPIO{pin} Pin {pin}",
+            description=f"GPIO{pin} Pin {PIN_MAP.get(pin, pin)}",
         )
         this_application.add_object(bi)
         binary_inputs[pin] = bi
@@ -240,7 +269,7 @@ def main():
             objectIdentifier=("binaryOutput", idx),
             objectName=f"GPIO{pin}",
             presentValue="inactive",
-            description=f"GPIO{pin} Pin {pin}",
+            description=f"GPIO{pin} Pin {PIN_MAP.get(pin, pin)}",
         )
         this_application.add_object(bo)
         binary_outputs[pin] = bo

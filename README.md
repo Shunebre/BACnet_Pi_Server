@@ -7,7 +7,8 @@ proprietà `protocolObjectTypesSupported` del dispositivo. Tutti i pin BCM
 pari (2–27) vengono configurati come *Binary Input*, mentre i pin dispari
 diventano *Binary Output* controllabili tramite la proprietà
 `presentValue`. Ogni oggetto viene chiamato `GPIOX`, dove `X` è il numero
-del pin, e possiede come descrizione `GPIOX Pin X`.
+del GPIO, e possiede come descrizione `GPIOX Pin Y`, dove X indica il
+numero del GPIO e Y il numero del pin.
 
 ## Aggiunta di oggetti dinamici
 
