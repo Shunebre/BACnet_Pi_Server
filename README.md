@@ -7,7 +7,9 @@ proprietà `protocolObjectTypesSupported` del dispositivo. Tutti i pin BCM
 pari (2–27) vengono configurati come *Binary Input*, mentre i pin dispari
 diventano *Binary Output* controllabili tramite la proprietà
 `presentValue`. Ogni oggetto viene chiamato `GPIOX`, dove `X` è il numero
-del pin, e possiede come descrizione `GPIOX Pin X`.
+ del pin, e possiede come descrizione `GPIOX Pin X`. Per i Binary Output
+ è ora possibile modificare anche la proprietà `polarity` per invertire
+ il comportamento di attivazione.
 
 ## Aggiunta di oggetti dinamici
 
@@ -32,6 +34,23 @@ Il file deve contenere una lista di oggetti con i seguenti campi:
     }
   }
 ]
+```
+
+È possibile aggiungere anche altri tipi di oggetto. Ad esempio un `AnalogValueObject` può essere descritto così:
+
+```json
+  {
+    "module": "bacpypes.object",
+    "class": "AnalogValueObject",
+    "params": {
+      "objectIdentifier": ["analogValue", 1],
+      "objectName": "EsempioAV",
+      "presentValue": 0,
+      "statusFlags": [false, false, false, false],
+      "outOfService": false,
+      "eventState": "normal"
+    }
+  }
 ```
 
 Il sistema importa dinamicamente il modulo e la classe indicati e aggiunge l'oggetto
