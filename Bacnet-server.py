@@ -158,7 +158,9 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.statusFlags = StatusFlags([False, False, False, False])
         self.outOfService = False
         self.eventState = 'normal'
-        self.polarity = Polarity('normal')
+        # store the polarity as a string so that bacpypes can
+        # convert it correctly when the property is read
+        self.polarity = 'normal'
 
 
 # Task GPIO
@@ -175,7 +177,7 @@ class GPIOUpdateTask(RecurringTask):
         # Aggiorna tutti i Binary Output
         for pin, obj in binary_outputs.items():
             value = 1 if obj.presentValue == 'active' else 0
-            if getattr(obj, 'polarity', Polarity('normal')) == Polarity('reverse'):
+            if Polarity(getattr(obj, 'polarity', 'normal')) == Polarity('reverse'):
                 value = 0 if value == 1 else 1
             GPIO.output(pin, value)
 
