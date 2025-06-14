@@ -10,6 +10,18 @@
       "outOfService": false,
       "eventState": "normal"
     }
+  },
+  {
+    "module": "bacpypes.object",
+    "class": "AnalogValueObject",
+    "params": {
+      "objectIdentifier": ["analogValue", 1],
+      "objectName": "ExampleAV",
+      "presentValue": 0,
+      "statusFlags": [false, false, false, false],
+      "outOfService": false,
+      "eventState": "normal"
+    }
   }
 ]
 

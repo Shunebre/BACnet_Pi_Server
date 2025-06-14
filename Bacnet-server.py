@@ -15,7 +15,7 @@ from bacpypes.object import (
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.task import RecurringTask
 from bacpypes.primitivedata import Unsigned
-from bacpypes.basetypes import StatusFlags
+from bacpypes.basetypes import StatusFlags, Polarity
 from bacpypes.primitivedata import ObjectType
 from bacpypes.pdu import Address
 
@@ -158,6 +158,7 @@ class CustomBinaryOutput(BinaryOutputObject):
         self.statusFlags = StatusFlags([False, False, False, False])
         self.outOfService = False
         self.eventState = 'normal'
+        self.polarity = Polarity('normal')
 
 
 # Task GPIO
@@ -174,6 +175,8 @@ class GPIOUpdateTask(RecurringTask):
         # Aggiorna tutti i Binary Output
         for pin, obj in binary_outputs.items():
             value = 1 if obj.presentValue == 'active' else 0
+            if getattr(obj, 'polarity', Polarity('normal')) == Polarity('reverse'):
+                value = 0 if value == 1 else 1
             GPIO.output(pin, value)
 
         self.install_task()
