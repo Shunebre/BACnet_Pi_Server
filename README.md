@@ -3,7 +3,9 @@
 Questo server BACnet per Raspberry Pi consente di esporre punti come input e output GPIO.
 
 Il server espone le funzionalità BACnet di base configurando la
-proprietà `protocolObjectTypesSupported` del dispositivo. Tutti i pin BCM
+proprietà `protocolObjectTypesSupported` del dispositivo. L'elenco degli
+oggetti viene filtrato in base ai tipi supportati dalla libreria BACpypes
+per evitare errori in lettura. Tutti i pin BCM
 pari (2–27) vengono configurati come *Binary Input*, mentre i pin dispari
 diventano *Binary Output* controllabili tramite la proprietà
 `presentValue`. Ogni oggetto viene chiamato `GPIOX`, dove `X` è il numero

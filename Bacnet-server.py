@@ -231,7 +231,17 @@ def main():
         firmwareRevision=VERSION,
         systemStatus="operational",
         databaseRevision=Unsigned(0),
-        protocolObjectTypesSupported=[obj for obj in ObjectType.enumerations],
+        # limit the list to the object types actually supported by bacpypes
+        # to avoid errors when the property is read
+        protocolObjectTypesSupported=[
+            obj
+            for obj in ObjectType.enumerations
+            if obj
+            in getattr(
+                importlib.import_module('bacpypes.basetypes'),
+                'ObjectTypesSupported',
+            ).bitNames
+        ],
     )
 
     this_application = BIPSimpleApplication(device, args.address)
