@@ -7,10 +7,9 @@ proprietà `protocolObjectTypesSupported` del dispositivo. Tutti i pin BCM
 pari (2–27) vengono configurati come *Binary Input*, mentre i pin dispari
 diventano *Binary Output* controllabili tramite la proprietà
 `presentValue`. Ogni oggetto viene chiamato `GPIOX`, dove `X` è il numero
-codex/rendere-la-proprietà-polarità-scrivibile
- del pin, e possiede come descrizione `GPIOX Pin X`. Per i Binary Output
- è ora possibile modificare anche la proprietà `polarity` per invertire
- il comportamento di attivazione.
+del pin e possiede come descrizione `GPIOX Pin X`. Per i *Binary Output*
+è disponibile anche la proprietà `polarity` (valori `normal` o `reverse`)
+che consente di invertire il comportamento di attivazione.
 
 ## Aggiunta di oggetti dinamici
 
