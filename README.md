@@ -87,6 +87,12 @@ l'opzione `--broadcast-ip`:
 python Bacnet-server.py --broadcast-ip 255.255.255.255
 ```
 
+È possibile modificare l'ID del dispositivo tramite l'opzione `--device-id`:
+
+```bash
+python Bacnet-server.py --device-id 123
+```
+
 ### Gestione delle versioni
 
 Il numero di versione è contenuto nel file `VERSION`. Ogni modifica al codice

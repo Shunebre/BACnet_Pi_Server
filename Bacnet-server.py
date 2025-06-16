@@ -68,7 +68,8 @@ PIN_MAP = {
 }
 
 # Parametri del dispositivo BACnet
-DEVICE_ID = 110
+DEFAULT_DEVICE_ID = 110
+DEVICE_ID = DEFAULT_DEVICE_ID
 DEVICE_NAME = "GardenPi"
 VENDOR_ID = 15
 
@@ -185,6 +186,7 @@ class GPIOUpdateTask(RecurringTask):
 
 
 def main():
+    global this_application, DEVICE_ID
     parser = argparse.ArgumentParser(description="BACnet Pi Server")
     parser.add_argument(
         "-a",
@@ -208,9 +210,16 @@ def main():
         "--broadcast-ip",
         help="Indirizzo IP di broadcast (es. 255.255.255.255)",
     )
+    parser.add_argument(
+        "-d",
+        "--device-id",
+        type=int,
+        default=DEVICE_ID,
+        help="ID del dispositivo BACnet",
+    )
     args = parser.parse_args()
 
-    global this_application
+    DEVICE_ID = args.device_id
 
     GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
