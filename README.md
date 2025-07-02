@@ -1,5 +1,8 @@
 # BACnet Pi Server
 
+Per la versione in inglese leggere [README.en.md](README.en.md).
+
+
 Questo server BACnet per Raspberry Pi consente di esporre punti come input e output GPIO.
 
 Il server espone le funzionalità BACnet di base configurando la
@@ -66,34 +69,42 @@ bacpypes.
 
 ## Esecuzione
 
-Assicurarsi che le dipendenze (RPi.GPIO e bacpypes) siano installate.
+Installare le dipendenze con `pip install -r requirements.txt`.
 Avviare lo script con:
 
 ```bash
-python Bacnet-server.py
+./Bacnet-server.py
 ```
 
 Se il server deve comunicare tramite una VPN, è possibile registrarsi presso un
 BBMD specificando l'indirizzo con l'opzione `--bbmd`, ad esempio:
 
 ```bash
-python Bacnet-server.py --bbmd 10.194.195.1
+./Bacnet-server.py --bbmd 10.194.195.1
 ```
 
 È anche possibile specificare un IP di broadcast personalizzato con
 l'opzione `--broadcast-ip`:
 
 ```bash
-python Bacnet-server.py --broadcast-ip 255.255.255.255
+./Bacnet-server.py --broadcast-ip 255.255.255.255
 ```
 
 È possibile modificare l'ID del dispositivo tramite l'opzione `--device-id`:
 
 ```bash
-python Bacnet-server.py --device-id 123
+./Bacnet-server.py --device-id 123
+```
+
+### Esempio servizio systemd
+Un esempio di unita` e` disponibile nella cartella `systemd/` come `bacnet.service`.
+Modificare `WorkingDirectory` ed `ExecStart` con i percorsi corretti e abilitare con:
+```bash
+sudo systemctl enable bacnet.service
 ```
 
 ### Gestione delle versioni
+
 
 Il numero di versione è contenuto nel file `VERSION`. Ogni modifica al codice
 deve incrementare la versione di **0.0.1** per mantenere allineate le
