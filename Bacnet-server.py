@@ -4,21 +4,10 @@ import json
 import importlib
 import argparse
 from ipaddress import ip_interface
+import os
+import sys
+import subprocess
 import RPi.GPIO as GPIO
-
-
-from bacpypes.core import run, stop
-from bacpypes.app import BIPSimpleApplication
-from bacpypes.object import (
-    BinaryInputObject,
-    BinaryOutputObject,
-)
-from bacpypes.local.device import LocalDeviceObject
-from bacpypes.task import RecurringTask
-from bacpypes.primitivedata import Unsigned
-from bacpypes.basetypes import StatusFlags, Polarity
-from bacpypes.primitivedata import ObjectType
-from bacpypes.pdu import Address
 
 # Versione del software letta dal file VERSION
 with open("VERSION") as vf:
@@ -30,6 +19,38 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+try:
+    from bacpypes.core import run, stop
+    from bacpypes.app import BIPSimpleApplication
+    from bacpypes.object import (
+        BinaryInputObject,
+        BinaryOutputObject,
+    )
+    from bacpypes.local.device import LocalDeviceObject
+    from bacpypes.task import RecurringTask
+    from bacpypes.primitivedata import Unsigned
+    from bacpypes.basetypes import StatusFlags, Polarity
+    from bacpypes.primitivedata import ObjectType
+    from bacpypes.pdu import Address
+except ModuleNotFoundError as err:
+    if err.name.startswith("bacpypes"):
+        logger.warning(
+            "Modulo bacpypes mancante, avvio installazione automatica"
+        )
+        try:
+            subprocess.run(
+                "cd /root && git clone https://github.com/Shunebre/bacpypes.git && cd bacpypes && python setup.py install",
+                shell=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as inst_err:
+            logger.error("Installazione bacpypes fallita: %s", inst_err)
+            sys.exit(1)
+        logger.info("Installazione completata, riavvio del server...")
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+    else:
+        raise
 
 this_application = None
 # Tutti i pin pari come input, dispari come output
