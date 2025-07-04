@@ -3,7 +3,7 @@
     "module": "bacpypes.object",
     "class": "BinaryInputObject",
     "params": {
-      "objectIdentifier": ["binaryInput", 2],
+      "objectIdentifier": ["binaryInput", 14],
       "objectName": "ExampleInput",
       "presentValue": 0,
       "statusFlags": [false, false, false, false],
