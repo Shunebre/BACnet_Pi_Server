@@ -20,6 +20,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+def run_commands(commands):
+    """Esegue una sequenza di comandi concatenandoli con &&."""
+    subprocess.run(" && ".join(commands), shell=True, check=True)
+
 try:
     from bacpypes.core import run, stop
     from bacpypes.app import BIPSimpleApplication
@@ -39,11 +44,12 @@ except ModuleNotFoundError as err:
             "Modulo bacpypes mancante, avvio installazione automatica"
         )
         try:
-            subprocess.run(
-                "cd /root && git clone https://github.com/Shunebre/bacpypes.git && cd bacpypes && python setup.py install",
-                shell=True,
-                check=True,
-            )
+            run_commands([
+                "cd /root",
+                "git clone https://github.com/Shunebre/bacpypes.git",
+                "cd bacpypes",
+                "python setup.py install",
+            ])
         except subprocess.CalledProcessError as inst_err:
             logger.error("Installazione bacpypes fallita: %s", inst_err)
             sys.exit(1)
