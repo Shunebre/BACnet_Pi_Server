@@ -103,6 +103,19 @@ Modificare `WorkingDirectory` ed `ExecStart` con i percorsi corretti e abilitare
 sudo systemctl enable bacnet.service
 ```
 
+### Configurazione automatica del servizio
+
+Lo script `install_service.py` genera e avvia l'unità con i parametri
+desiderati, ricaricando il daemon e abilitando automaticamente il servizio.
+Esempio:
+
+```bash
+sudo python3 install_service.py --address 192.168.1.10/24:47808 --device-id 123
+```
+
+Se l'avvio va a buon fine viene mostrato `BACnet_Pi_Server avviato con successo`.
+In caso contrario appare `BACnet_Pi_Server fallito avviamento`.
+
 ### Gestione delle versioni
 
 

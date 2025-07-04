@@ -36,6 +36,19 @@ An example unit file can be found in the `systemd/` directory as `bacnet.service
 sudo systemctl enable bacnet.service
 ```
 
+### Automatic systemd setup
+
+The `install_service.py` helper creates and starts the service with your
+parameters, automatically reloading the daemon and enabling the unit. For
+example:
+
+```bash
+sudo python3 install_service.py --address 192.168.1.10/24:47808 --device-id 123
+```
+
+On success the script prints `BACnet_Pi_Server avviato con successo`. If the
+startup fails `BACnet_Pi_Server fallito avviamento` is shown.
+
 ### Versioning
 
 The current version is stored in the `VERSION` file. Each code change should bump the version by **0.0.1** so that the `applicationSoftwareVersion` and `firmwareRevision` properties remain aligned.
