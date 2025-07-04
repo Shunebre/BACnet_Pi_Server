@@ -294,7 +294,14 @@ def main():
 
     if args.broadcast_ip:
         try:
-            this_application.ns._localBroadcast = Address(args.broadcast_ip)
+            if hasattr(this_application, "nsap") and hasattr(this_application.nsap, "localStation"):
+                this_application.nsap.localStation.addrBroadcast = Address(args.broadcast_ip)
+            elif hasattr(this_application, "ns"):
+                this_application.ns._localBroadcast = Address(args.broadcast_ip)
+            elif hasattr(this_application, "localAddress"):
+                this_application.localAddress.addrBroadcast = Address(args.broadcast_ip)
+            else:
+                raise AttributeError("broadcast property not found")
         except Exception as err:
             logger.warning(
                 "Impossibile impostare broadcast IP personalizzato: %s", err
