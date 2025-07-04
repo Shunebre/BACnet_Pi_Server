@@ -63,9 +63,11 @@ def main():
 
     try:
         write_service_file(args.service_path, cwd, exec_cmd)
-    except PermissionError:
-        print(f"Permesso negato: {args.service_path}")
+    except OSError:
+        print("errore nella creazione di bacnet.service")
         sys.exit(1)
+    else:
+        print("bacnet.service creato")
 
     try:
         run_systemctl([["daemon-reload"], ["enable", os.path.basename(args.service_path)], ["restart", os.path.basename(args.service_path)]])
