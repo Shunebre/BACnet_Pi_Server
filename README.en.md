@@ -53,3 +53,37 @@ startup fails `BACnet_Pi_Server fallito avviamento` is shown.
 
 The current version is stored in the `VERSION` file. Each code change should bump the version by **0.0.1** so that the `applicationSoftwareVersion` and `firmwareRevision` properties remain aligned.
 
+## Troubleshooting
+
+When the server does not respond as expected try these checks.
+
+- Verify the systemd service status:
+
+```bash
+sudo systemctl status bacnet.service
+```
+
+- Confirm UDP port 47808 is listening:
+
+```bash
+sudo ss -lun | grep 47808
+```
+
+- Capture network traffic to inspect BACnet packets:
+
+```bash
+sudo tcpdump -i eth0 udp port 47808
+```
+
+- When working across subnets register to a BBMD:
+
+```bash
+./Bacnet-server.py --bbmd 192.168.0.10
+```
+
+- Adjust the broadcast address if needed:
+
+```bash
+./Bacnet-server.py --broadcast-ip 255.255.255.255
+```
+
