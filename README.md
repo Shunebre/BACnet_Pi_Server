@@ -123,3 +123,37 @@ Il numero di versione è contenuto nel file `VERSION`. Ogni modifica al codice
 deve incrementare la versione di **0.0.1** per mantenere allineate le
 proprietà `applicationSoftwareVersion` e `firmwareRevision` esposte dal
 dispositivo BACnet.
+
+## Risoluzione dei problemi
+
+Se il server non risponde correttamente eseguire i seguenti controlli.
+
+- Verificare lo stato del servizio systemd:
+
+```bash
+sudo systemctl status bacnet.service
+```
+
+- Controllare che la porta UDP 47808 sia in ascolto:
+
+```bash
+sudo ss -lun | grep 47808
+```
+
+- Analizzare il traffico di rete con `tcpdump`:
+
+```bash
+sudo tcpdump -i eth0 udp port 47808
+```
+
+- Su sottoreti differenti registrarsi a un BBMD:
+
+```bash
+./Bacnet-server.py --bbmd 192.168.0.10
+```
+
+- Se i broadcast non raggiungono i client modificare l'indirizzo:
+
+```bash
+./Bacnet-server.py --broadcast-ip 255.255.255.255
+```
