@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import shlex
 import subprocess
 import sys
 
@@ -21,7 +22,11 @@ def build_exec_command(args, server_path):
         cmd += ["--broadcast-ip", args.broadcast_ip]
     if args.device_id is not None:
         cmd += ["--device-id", str(args.device_id)]
-    return " ".join(cmd)
+    # Quote each argument because ExecStart is parsed without a shell and
+    # any spaces would otherwise split arguments
+    if hasattr(shlex, "join"):
+        return shlex.join(cmd)
+    return " ".join(shlex.quote(part) for part in cmd)
 
 
 def write_service_file(path, working_dir, exec_cmd):
