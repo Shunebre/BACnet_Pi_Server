@@ -7,10 +7,13 @@ from ipaddress import ip_interface
 import os
 import sys
 import subprocess
+from pathlib import Path
 import RPi.GPIO as GPIO
 
+# Directory in cui si trova questo script
+SCRIPT_DIR = Path(__file__).resolve().parent
 # Versione del software letta dal file VERSION
-with open("VERSION") as vf:
+with open(SCRIPT_DIR / "VERSION") as vf:
     VERSION = vf.read().strip()
 
 # Configura logging
@@ -135,14 +138,17 @@ def add_object(module_path, class_name, params):
 
 def load_objects_from_config(config_path="objects.json"):
     """Carica oggetti aggiuntivi da un file JSON con controlli di base."""
+    path = Path(config_path)
+    if not path.is_absolute():
+        path = SCRIPT_DIR / path
     try:
-        with open(config_path) as cfg:
+        with open(path) as cfg:
             objects = json.load(cfg)
     except FileNotFoundError:
-        logger.warning("File di configurazione %s non trovato", config_path)
+        logger.warning("File di configurazione %s non trovato", path)
         return
     except json.JSONDecodeError as err:
-        logger.error("Errore di parsing %s: %s", config_path, err)
+        logger.error("Errore di parsing %s: %s", path, err)
         return
 
     # Identificatori gia' utilizzati nell'applicazione
